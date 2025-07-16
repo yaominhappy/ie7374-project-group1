@@ -1,7 +1,8 @@
 # ie7374-project-group1
 Sentiment and emotion analysis for customer service chatbot conversations
 * Model development and data pipeline: models/
-* Dataset used for training the models; models/data/MELD
+* The Jupyter notebook in folder modles/ include the data processing pipeline and model development.
+* Dataset used for training the models: models/data/MELD
 
 ## 1. Final Topic Area: NLP
 This project focuses on the field of Natural Language Processing (NLP), specifically in building an emotion-aware conversational system. We chose the NLP domain because the course has provided in-depth coverage of Transformer-based models applied to text sentiment analysis, which aligns well with our team’s interests and technical background. Moreover, emotion recognition is a challenging and impactful task within NLP, allowing us to explore the real-world potential of generative AI techniques.
