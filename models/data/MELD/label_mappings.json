@@ -1,0 +1,30 @@
+{
+  "emotion_to_idx": {
+    "anger": 0,
+    "disgust": 1,
+    "fear": 2,
+    "joy": 3,
+    "neutral": 4,
+    "sadness": 5,
+    "surprise": 6
+  },
+  "sentiment_to_idx": {
+    "negative": 0,
+    "neutral": 1,
+    "positive": 2
+  },
+  "idx_to_emotion": {
+    "0": "anger",
+    "1": "disgust",
+    "2": "fear",
+    "3": "joy",
+    "4": "neutral",
+    "5": "sadness",
+    "6": "surprise"
+  },
+  "idx_to_sentiment": {
+    "0": "negative",
+    "1": "neutral",
+    "2": "positive"
+  }
+}
