@@ -522,31 +522,29 @@ class BERTMultiTaskModel(tf.keras.Model):
 """### Context-Aware DialogueRNN Model"""
 class DialogueRNN(tf.keras.Model):
     """DialogueRNN for context-aware emotion recognition"""
-    def __init__(self, encoder_model, hidden_dim=128, num_emotions=7,
-                 num_sentiments=3, num_speakers=6, dropout_rate=0.3):
+    def __init__(self, model_name='bert-base-uncased', hidden_dim=128,
+                 num_emotions=7, num_sentiments=3, dropout_rate=0.3):
         super(DialogueRNN, self).__init__()
 
-        self.encoder = encoder_model
-        self.hidden_dim = hidden_dim
+        # Base encoder (BERT or RoBERTa)
+        self.encoder = TFAutoModel.from_pretrained(model_name)
+        encoder_hidden_size = self.encoder.config.hidden_size
 
         # Global GRU for context
         self.global_gru = layers.Bidirectional(
             layers.GRU(hidden_dim, return_sequences=True)
         )
 
-        # Speaker GRUs
-        self.speaker_grus = [
-            layers.GRU(hidden_dim, return_sequences=True)
-            for _ in range(num_speakers)
-        ]
-
         # Emotion GRU
-        self.emotion_gru = layers.GRU(hidden_dim, return_sequences=True)
+        self.emotion_gru = layers.GRU(hidden_dim, return_sequences=False)
 
         # Attention mechanism
         self.attention = layers.MultiHeadAttention(
             num_heads=8, key_dim=hidden_dim
         )
+
+        # Fusion layer
+        self.fusion = layers.Dense(hidden_dim, activation='relu')
 
         # Dropout
         self.dropout = layers.Dropout(dropout_rate)
@@ -555,17 +553,25 @@ class DialogueRNN(tf.keras.Model):
         self.emotion_output = layers.Dense(num_emotions, name='emotion')
         self.sentiment_output = layers.Dense(num_sentiments, name='sentiment')
 
-    def call(self, inputs, speaker_ids=None, training=False):
-        # Encode utterances
-        encoded = self.encoder(inputs, training=training)
+    def call(self, inputs, training=False):
+        # Ensure proper dtypes
+        input_ids = tf.cast(inputs['input_ids'], tf.int32)
+        attention_mask = tf.cast(inputs['attention_mask'], tf.int32)
 
-        # Get sequence of hidden states
-        if hasattr(encoded, 'last_hidden_state'):
-            utterance_features = encoded.last_hidden_state
-        else:
-            utterance_features = encoded[0]  # For some models
+        # Encode utterance
+        encoded = self.encoder(
+            input_ids=input_ids,
+            attention_mask=attention_mask,
+            training=training
+        )
 
-        # Global context
+        # Get CLS token representation
+        utterance_features = encoded.pooler_output
+
+        # Add sequence dimension for GRU
+        utterance_features = tf.expand_dims(utterance_features, axis=1)
+
+        # Global context (simplified for single utterance inference)
         global_context = self.global_gru(utterance_features, training=training)
 
         # Apply attention
@@ -578,8 +584,8 @@ class DialogueRNN(tf.keras.Model):
         emotion_features = self.emotion_gru(attended_features, training=training)
         emotion_features = self.dropout(emotion_features, training=training)
 
-        # Get final hidden state for classification
-        final_features = emotion_features[:, -1, :]
+        # Fusion
+        final_features = self.fusion(emotion_features)
 
         # Predictions
         emotion_logits = self.emotion_output(final_features)
@@ -589,6 +595,7 @@ class DialogueRNN(tf.keras.Model):
             'emotion': emotion_logits,
             'sentiment': sentiment_logits
         }
+
 
 """### COSMIC-style Model with Attention"""
 class COSMICModel(tf.keras.Model):
@@ -978,6 +985,12 @@ def main(model_type = 'bert'):
             num_emotions=len(mappings['emotion_to_idx']),
             num_sentiments=len(mappings['sentiment_to_idx'])
         )
+    elif config['model_type'] == 'dialoguernn':
+        model = DialogueRNN(
+            model_name=config['model_name'],
+            num_emotions=len(mappings['emotion_to_idx']),
+            num_sentiments=len(mappings['sentiment_to_idx'])
+        )
 
     # Build model
     dummy_input = next(iter(train_gen))[0]
@@ -996,8 +1009,8 @@ def main(model_type = 'bert'):
     model.compile(
         optimizer=optimizer,
         loss={
-            'emotion': tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-            'sentiment': tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+            'emotion': FocalLoss(alpha=emotion_weights, gamma=2.0),
+            'sentiment': FocalLoss(alpha=sentiment_weights, gamma=2.0)
         },
         metrics={
             'emotion': ['accuracy', MacroF1Score(len(mappings['emotion_to_idx']))],
