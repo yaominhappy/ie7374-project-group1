@@ -860,10 +860,10 @@ def evaluate_model(model, test_data, mappings):
     }
 
 """## Training Pipeline"""
-def main():
+def main(model_type = 'bert'):
     # Configuration
     config = {
-        'model_type': 'bert',  # 'bert', 'roberta', 'lstm', 'dialoguernn', 'cosmic'
+        'model_type': model_type,  # 'bert', 'roberta', 'lstm', 'dialoguernn', 'cosmic'
         'model_name': 'bert-base-uncased',
         'batch_size': 16,
         'learning_rate': 2e-5,
@@ -876,10 +876,6 @@ def main():
 
     # Load data
     print("Loading data...")
-    train_path = 'https://raw.githubusercontent.com/declare-lab/MELD/master/data/MELD/train_sent_emo.csv'
-    dev_path = 'https://raw.githubusercontent.com/declare-lab/MELD/master/data/MELD/dev_sent_emo.csv'
-    test_path = 'https://raw.githubusercontent.com/declare-lab/MELD/master/data/MELD/test_sent_emo.csv'
-
     train_df = pd.read_csv(train_path)
     dev_df = pd.read_csv(dev_path)
     test_df = pd.read_csv(test_path)
@@ -1126,4 +1122,10 @@ def plot_confusion_matrices(results, mappings):
     plt.show()
 
 if __name__ == "__main__":
-    model, history, results = main()
+    train_path = 'https://raw.githubusercontent.com/declare-lab/MELD/master/data/MELD/train_sent_emo.csv'
+    dev_path = 'https://raw.githubusercontent.com/declare-lab/MELD/master/data/MELD/dev_sent_emo.csv'
+    test_path = 'https://raw.githubusercontent.com/declare-lab/MELD/master/data/MELD/test_sent_emo.csv'
+    
+    model_types = ['bert', 'roberta', 'lstm', 'dialoguernn', 'cosmic']
+    for model_type in model_types:
+        model, history, results = main(model_type)
