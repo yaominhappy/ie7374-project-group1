@@ -1,4 +1,4 @@
-# Complete implementation for Multimodal MELD and Data Augmentation
+# implementation for Multimodal MELD and Data Augmentation
 
 import pandas as pd
 import numpy as np
