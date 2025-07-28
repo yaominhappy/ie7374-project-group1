@@ -1,0 +1,131 @@
+version: '3.8'
+
+services:
+  # Main application service with GPU support
+  meld-gpu:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        GPU: "true"
+    image: meld-emotion-recognition:gpu
+    container_name: meld-gpu
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      - CUDA_VISIBLE_DEVICES=0
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./checkpoints:/app/checkpoints
+      - ./exported_models:/app/exported_models
+    working_dir: /app
+    command: python main.py train --models bert --epochs 10
+    profiles:
+      - gpu
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  # CPU-only service
+  meld-cpu:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        GPU: "false"
+    image: meld-emotion-recognition:cpu
+    container_name: meld-cpu
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./checkpoints:/app/checkpoints
+      - ./exported_models:/app/exported_models
+    working_dir: /app
+    command: python main.py train --models lstm --epochs 5
+    profiles:
+      - cpu
+
+  # TensorBoard service
+  tensorboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        GPU: "false"
+    image: meld-emotion-recognition:cpu
+    container_name: meld-tensorboard
+    ports:
+      - "6006:6006"
+    volumes:
+      - ./logs:/app/logs:ro
+    command: tensorboard --logdir=/app/logs --bind_all
+    profiles:
+      - gpu
+      - cpu
+
+  # Jupyter notebook service for development
+  notebook:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        GPU: "true"
+    image: meld-emotion-recognition:gpu
+    container_name: meld-notebook
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - JUPYTER_ENABLE_LAB=yes
+    ports:
+      - "8888:8888"
+    volumes:
+      - .:/app
+      - ./notebooks:/app/notebooks
+    command: >
+      bash -c "pip install jupyter jupyterlab &&
+               jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root"
+    profiles:
+      - dev
+
+  # Model serving with TensorFlow Serving
+  tf-serving:
+    image: tensorflow/serving:2.13.0-gpu
+    container_name: meld-tf-serving
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - MODEL_NAME=emotion_model
+    ports:
+      - "8501:8501"
+      - "8500:8500"
+    volumes:
+      - ./exported_models:/models
+    command: >
+      --model_config_file=/models/model_config.txt
+      --model_config_file_poll_wait_seconds=60
+    profiles:
+      - serve
+
+  # Interactive demo service
+  demo:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        GPU: "false"
+    image: meld-emotion-recognition:cpu
+    container_name: meld-demo
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./data:/app/data:ro
+      - ./checkpoints:/app/checkpoints:ro
+    command: python -m utils.demo --model bert
+    profiles:
+      - demo
