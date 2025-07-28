@@ -12,6 +12,38 @@ Sentiment and emotion analysis for customer service chatbot conversations
   `source venv/bin/activate`
 * 3. Install dependencies
   `pip install -r requirements.txt`
+* 4. Run model using Jupyter notebook:
+  In a `jupyter notebook` environment, open the project notebook from `models\IE7374_Project_Group1_model_pipeline.ipynb`
+  Run the code in the notebook to load dataset and run model training and testing pipeline.
+* 5. Load dataset using python code:
+  `python src\data_loader.py`
+  6. Run model training and testing pipeline using python code:
+  `python src\model_runner.py`
+
+## Project repo structure
+meld-emotion-recognition/
+├── requirements.txt          # Python dependencies
+├── README.md                 # Project documentation  
+│
+├── models/                   # Model architectures
+│   ├── __init__.py
+│   ├── lstm_model.py
+│   ├── bert_model.py
+│   ├── dialogue_rnn.py
+│
+├── utils/                    # Utility functions
+│   ├── __init__.py
+│   ├── methods.py
+│   ├── metrics.py
+│
+├── src/                  # CLI scripts
+│   ├── data_loader.py
+│   ├── model_runner.py
+│
+└── configs/                  # Configuration files
+    ├── model_configs.yaml
+
+
 ## 1. Final Topic Area: NLP
 This project focuses on the field of Natural Language Processing (NLP), specifically in building an emotion-aware conversational system. We chose the NLP domain because the course has provided in-depth coverage of Transformer-based models applied to text sentiment analysis, which aligns well with our team’s interests and technical background. Moreover, emotion recognition is a challenging and impactful task within NLP, allowing us to explore the real-world potential of generative AI techniques.
 ### 1.1. Introduction 
