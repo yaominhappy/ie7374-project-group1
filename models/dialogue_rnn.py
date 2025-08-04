@@ -1,5 +1,5 @@
 """
-DialogueRNN model for context-aware emotion recognition
+DialogueRNN model for emotion and sentiment classification
 """
 
 import tensorflow as tf
@@ -11,7 +11,7 @@ import torch.nn as nn
 
 # TensorFlow Implementation
 class DialogueRNNTF(tf.keras.Model):
-    """DialogueRNN for context-aware emotion recognition (TensorFlow)"""
+    """DialogueRNN for emotion and sentiment classification (TensorFlow)"""
     
     def __init__(self, base_model_name='bert-base-uncased', hidden_dim=128,
                  num_emotions=7, num_sentiments=3, num_speakers=6, 
@@ -97,7 +97,7 @@ class DialogueRNNTF(tf.keras.Model):
 
 # PyTorch Implementation
 class DialogueRNNPT(nn.Module):
-    """DialogueRNN for context-aware emotion recognition (PyTorch)"""
+    """DialogueRNN for emotion and sentiment classification (PyTorch)"""
     
     def __init__(self, base_model_name='bert-base-uncased', hidden_dim=128,
                  num_emotions=7, num_sentiments=3, num_speakers=6,
